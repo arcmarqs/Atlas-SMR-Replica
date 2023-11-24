@@ -4,10 +4,12 @@ use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use anyhow::Context;
 
 use log::{debug, error, info, trace, warn};
+use thiserror::Error;
 
-use atlas_common::channel;
+use atlas_common::{channel, Err};
 use atlas_common::channel::{ChannelSyncRx, ChannelSyncTx};
 use atlas_common::error::*;
 use atlas_common::globals::ReadOnly;
@@ -251,22 +253,18 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
 
             match message {
                 QuorumReconfigurationMessage::ReconfigurationProtocolStable(quorum) => {
-                    reconf_response_tx.send(QuorumReconfigurationResponse::QuorumStableResponse(true)).unwrap();
+                    reconf_response_tx.send_return(QuorumReconfigurationResponse::QuorumStableResponse(true)).unwrap();
 
                     break quorum;
                 }
                 _ => {
-                    error!("Received request for quorum view alteration, but we are not even done with reconfiguration stabilization?");
-
-                    return Err(Error::simple_with_msg(ErrorKind::ReconfigurationNotStable, "Received alteration request before stable quorum was reached"));
+                    return Err!(SMRReplicaError::AlterationReceivedBeforeStable);
                 }
             }
         };
 
         if quorum.len() < OP::get_n_for_f(1) {
-            error!("Received a stable message, but the quorum is not big enough?");
-
-            return Err(Error::simple_with_msg(ErrorKind::ReconfigurationNotStable, "The reconfiguration protocol is not stable with , but we received a stable message?"));
+            return Err!(SMRReplicaError::QuorumNotLargeEnough(quorum.len(), OP::get_n_for_f(1)));
         }
 
         info!("{:?} // Reconfiguration protocol stabilized with {} nodes ({:?}), starting replica", log_node_id, quorum.len(), quorum);
@@ -278,7 +276,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
 
         let log = persistent_log.read_decision_log(OperationMode::BlockingSync)?;
 
-        let op_args = OrderingProtocolArgs(executor.clone(), timeouts.clone(),
+        let op_args = OrderingProtocolArgs(log_node_id, executor.clone(), timeouts.clone(),
                                            rq_pre_processor.clone(),
                                            batch_input, node.clone(),
                                            quorum.clone());
@@ -390,7 +388,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
                         }
                         SystemMessage::ForwardedRequestMessage(fwd_reqs) => {
 // Send the forwarded requests to be handled, filtered and then passed onto the ordering protocol
-                            self.rq_pre_processor.send(PreProcessorMessage::ForwardedRequests(StoredMessage::new(header, fwd_reqs))).unwrap();
+                            self.rq_pre_processor.send_return(PreProcessorMessage::ForwardedRequests(StoredMessage::new(header, fwd_reqs))).unwrap();
                         }
                         SystemMessage::ForwardedProtocolMessage(fwd_protocol) => {
                             let message = fwd_protocol.into_inner();
@@ -630,7 +628,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
         for decision in decisions.into_iter() {
             let (seq, requests, to_batch) = decision.into_inner();
 
-            if let Err(err) = self.rq_pre_processor.send(PreProcessorMessage::DecidedBatch(requests)) {
+            if let Err(err) = self.rq_pre_processor.send_return(PreProcessorMessage::DecidedBatch(requests)) {
                 error!("Error sending decided batch to pre processor: {:?}", err);
             }
 
@@ -890,7 +888,6 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
     }
 
     fn run_state_transfer_protocol(&mut self) -> Result<()> {
-
         let state = std::mem::replace(&mut self.transfer_states, TransferPhase::NotRunning);
 
         self.transfer_states = match state {
@@ -930,6 +927,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
                 }
             }
         };
+
         info!("Running log transfer protocol. {:?}", self.transfer_states);
 
         self.decision_log_handle.send_work(DLWorkMessage::init_log_transfer_message(self.view(), LogTransferWorkMessage::RequestLogTransfer));
@@ -961,11 +959,11 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
         info!("{:?} // Sending attempt quorum join response to reconfiguration protocol. Has failed: {:?}", self.id(), failed);
 
         if failed {
-            self.reconf_tx.send(QuorumReconfigurationResponse::QuorumAttemptJoinResponse(QuorumAttemptJoinResponse::Failed))
-                .wrapped_msg(ErrorKind::CommunicationChannel, "Error sending quorum entrance response to reconfiguration protocol")?;
+            self.reconf_tx.send_return(QuorumReconfigurationResponse::QuorumAttemptJoinResponse(QuorumAttemptJoinResponse::Failed))
+                .context("Error sending quorum entrance response to reconfiguration protocol")?;
         } else {
-            self.reconf_tx.send(QuorumReconfigurationResponse::QuorumAttemptJoinResponse(QuorumAttemptJoinResponse::Success))
-                .wrapped_msg(ErrorKind::CommunicationChannel, "Error sending quorum entrance response to reconfiguration protocol")?;
+            self.reconf_tx.send_return(QuorumReconfigurationResponse::QuorumAttemptJoinResponse(QuorumAttemptJoinResponse::Success))
+                .context("Error sending quorum entrance response to reconfiguration protocol")?;
         }
 
         Ok(())
@@ -978,12 +976,12 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
 
         match failed_reason {
             None => {
-                self.reconf_tx.send(QuorumReconfigurationResponse::QuorumAlterationResponse(QuorumAlterationResponse::Successful(node_id)))
-                    .wrapped_msg(ErrorKind::CommunicationChannel, "Error sending quorum entrance response to reconfiguration protocol")?;
+                self.reconf_tx.send_return(QuorumReconfigurationResponse::QuorumAlterationResponse(QuorumAlterationResponse::Successful(node_id)))
+                    .context("Error sending quorum entrance response to reconfiguration protocol")?;
             }
             Some(fail_reason) => {
-                self.reconf_tx.send(QuorumReconfigurationResponse::QuorumAlterationResponse(QuorumAlterationResponse::Failed(node_id, fail_reason)))
-                    .wrapped_msg(ErrorKind::CommunicationChannel, "Error sending quorum entrance response to reconfiguration protocol")?;
+                self.reconf_tx.send_return(QuorumReconfigurationResponse::QuorumAlterationResponse(QuorumAlterationResponse::Failed(node_id, fail_reason)))
+                    .context("Error sending quorum entrance response to reconfiguration protocol")?;
             }
         }
 
@@ -1102,7 +1100,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> PermissionedProtocolHandling<D, S, VT
                         }
                         SystemMessage::ForwardedRequestMessage(fwd_reqs) => {
 // Send the forwarded requests to be handled, filtered and then passed onto the ordering protocol
-                            self.rq_pre_processor.send(PreProcessorMessage::ForwardedRequests(StoredMessage::new(header, fwd_reqs))).unwrap();
+                            self.rq_pre_processor.send_return(PreProcessorMessage::ForwardedRequests(StoredMessage::new(header, fwd_reqs))).unwrap();
                         }
                         SystemMessage::ForwardedProtocolMessage(fwd_protocol) => {
                             let message = fwd_protocol.into_inner();
@@ -1287,3 +1285,12 @@ impl NetworkView for MockView {
 /// and a new log checkpoint is initiated.
 /// TODO: Move this to an env variable as it can be highly dependent on the service implemented on top of it
 pub const CHECKPOINT_PERIOD: u32 = 1000;
+
+#[derive(Error, Debug)]
+pub enum SMRReplicaError {
+    #[error("The provided quorum is not of sufficient size. Expected at least {0} but got {1}")]
+    QuorumNotLargeEnough(usize, usize),
+    #[error("The reconfiguration protocol is not stable and we received an alteration request")]
+    AlterationReceivedBeforeStable
+
+}
