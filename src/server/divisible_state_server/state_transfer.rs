@@ -75,7 +75,7 @@ impl<V, S, NT, PL, ST> DivStateTransfer<V, S, NT, PL, ST>
         loop {
             self.receive_checkpoints()?;
 
-            self.inner_state.iterate(&mut self.state_transfer_protocol)?;
+            self.inner_state.iterate(&mut self.state_transfer_protocol)?; 
 
             metric_duration(STATE_TRANSFER_PROCESS_TIME_ID, last_loop.elapsed());
 
@@ -90,13 +90,13 @@ impl<V, S, NT, PL, ST> DivStateTransfer<V, S, NT, PL, ST>
 
             match state {
                 AppState::StateDescriptor(descriptor) => {
-                    self.state_transfer_protocol.handle_state_desc_received_from_app(descriptor)?;
+                    self.state_transfer_protocol.handle_state_desc_received_from_app(descriptor,seq_no)?;
                 }
                 AppState::StatePart(parts) => {
                     self.state_transfer_protocol.handle_state_part_received_from_app(parts.into_vec())?;
                 }
                 AppState::Done => {
-                    self.state_transfer_protocol.handle_state_finished_reception()?;
+                    self.state_transfer_protocol.handle_state_finished_reception(seq_no)?;
                     self.inner_state.notify_of_checkpoint(seq_no);
                 }
             }
