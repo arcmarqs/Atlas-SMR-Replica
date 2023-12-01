@@ -401,7 +401,6 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
                         }
                         SystemMessage::LogTransferMessage(log_transfer) => {
                             let strd_msg = StoredMessage::new(header, log_transfer.into_inner());
-
                             let view = self.view();
 
                             self.decision_log_handle.send_work(DLWorkMessage::init_log_transfer_message(view, LogTransferWorkMessage::LogTransferMessage(strd_msg)));
@@ -845,7 +844,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
             TransferPhase::RunningTransferProtocols { log_transfer, state_transfer } => {
                 match (log_transfer, state_transfer) {
                     (LogTransferState::Done(initial_seq, final_seq), StateTransferState::Done(state_transfer_seq)) => {
-                        if (*state_transfer_seq < *initial_seq || *state_transfer_seq > *final_seq) && (*state_transfer_seq != SeqNo::ZERO && *initial_seq != SeqNo::ZERO) {
+                        if (state_transfer_seq.next() < *initial_seq || state_transfer_seq.next() > *final_seq) && (*state_transfer_seq != SeqNo::ZERO && *initial_seq != SeqNo::ZERO) {
                             error!("{:?} // Log transfer protocol and state transfer protocol are not in sync. Received {:?} state and {:?} - {:?} log", self.id(), *state_transfer_seq, * initial_seq, * final_seq);
 
                             self.run_transfer_protocols()?;
@@ -1284,7 +1283,7 @@ impl NetworkView for MockView {
 /// Every `PERIOD` messages, the message log is cleared,
 /// and a new log checkpoint is initiated.
 /// TODO: Move this to an env variable as it can be highly dependent on the service implemented on top of it
-pub const CHECKPOINT_PERIOD: u32 = 5000;
+pub const CHECKPOINT_PERIOD: u32 = 1000;
 
 #[derive(Error, Debug)]
 pub enum SMRReplicaError {
