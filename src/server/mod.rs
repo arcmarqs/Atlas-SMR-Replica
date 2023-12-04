@@ -842,6 +842,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
         match &self.transfer_states {
             TransferPhase::NotRunning => unreachable!(),
             TransferPhase::RunningTransferProtocols { log_transfer, state_transfer } => {
+                println!("FINISH STATE TRANSFER");
                 match (log_transfer, state_transfer) {
                     (LogTransferState::Done(initial_seq, final_seq), StateTransferState::Done(state_transfer_seq)) => {
                         if (state_transfer_seq.next() < *initial_seq || state_transfer_seq.next() > *final_seq) && (*state_transfer_seq != SeqNo::ZERO && *initial_seq != SeqNo::ZERO) {
@@ -881,6 +882,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
         };
 
         info!("{:?} // Running state and log transfer protocols. {:?}", NetworkNode::id(&*self.node), self.transfer_states);
+        println!("{:?} // Running state and log transfer protocols. {:?}", NetworkNode::id(&*self.node), self.transfer_states);
 
         self.state_transfer_handle.send_work_message(StateTransferWorkMessage::RequestLatestState(self.view()));
         self.decision_log_handle.send_work(DLWorkMessage::init_log_transfer_message(self.view(), LogTransferWorkMessage::RequestLogTransfer));
