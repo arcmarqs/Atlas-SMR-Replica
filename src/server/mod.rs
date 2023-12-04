@@ -383,6 +383,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
                         }
                         SystemMessage::StateTransferMessage(state_transfer_msg) => {
                             let strd_message = StoredMessage::new(header, state_transfer_msg.into_inner());
+                            println!("State Transfer");
 
                             self.state_transfer_handle.send_work_message(StateTransferWorkMessage::StateTransferMessage(self.view(), strd_message));
                         }
@@ -402,7 +403,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
                         SystemMessage::LogTransferMessage(log_transfer) => {
                             let strd_msg = StoredMessage::new(header, log_transfer.into_inner());
                             let view = self.view();
-
+                            println!("Log Transfer");
                             self.decision_log_handle.send_work(DLWorkMessage::init_log_transfer_message(view, LogTransferWorkMessage::LogTransferMessage(strd_msg)));
                         }
                         _ => {
@@ -491,6 +492,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
             }
             STResult::StateTransferFinished(seq_no) => {
                 info!("{:?} // State transfer finished. Registering result and comparing with log transfer result", NetworkNode::id(&*self.node));
+                println!("{:?} // State transfer finished. Registering result and comparing with log transfer result", NetworkNode::id(&*self.node));
 
                 self.executor_handle.poll_state_channel()?;
 
