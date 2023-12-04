@@ -510,6 +510,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
     /// Handles receiving the log transfer finalized
     fn handle_log_transfer_done(&mut self, initial_seq: SeqNo, last_seq: SeqNo) -> Result<()> {
         info!("Handling log transfer result {:?} to {:?} with current phase {:?}", initial_seq, last_seq, self.transfer_states);
+        println!("Handling log transfer result {:?} to {:?} with current phase {:?}", initial_seq, last_seq, self.transfer_states);
 
         let prev_state = std::mem::replace(&mut self.transfer_states, TransferPhase::NotRunning);
 
@@ -538,6 +539,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
     /// Handles receiving the state transfer state
     fn handle_state_transfer_done(&mut self, seq: SeqNo) -> Result<()> {
         info!("Handling state transfer result {:?} with current phase {:?}", seq, self.transfer_states);
+        println!("Handling state transfer result {:?} with current phase {:?}", seq, self.transfer_states);
 
         let prev_state = std::mem::replace(&mut self.transfer_states, TransferPhase::NotRunning);
 
