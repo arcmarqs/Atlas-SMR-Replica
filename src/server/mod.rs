@@ -383,7 +383,6 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
                         }
                         SystemMessage::StateTransferMessage(state_transfer_msg) => {
                             let strd_message = StoredMessage::new(header, state_transfer_msg.into_inner());
-                            println!("State Transfer");
 
                             self.state_transfer_handle.send_work_message(StateTransferWorkMessage::StateTransferMessage(self.view(), strd_message));
                         }
@@ -403,7 +402,6 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
                         SystemMessage::LogTransferMessage(log_transfer) => {
                             let strd_msg = StoredMessage::new(header, log_transfer.into_inner());
                             let view = self.view();
-                            println!("Log Transfer");
                             self.decision_log_handle.send_work(DLWorkMessage::init_log_transfer_message(view, LogTransferWorkMessage::LogTransferMessage(strd_msg)));
                         }
                         _ => {
@@ -492,7 +490,6 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
             }
             STResult::StateTransferFinished(seq_no) => {
                 info!("{:?} // State transfer finished. Registering result and comparing with log transfer result", NetworkNode::id(&*self.node));
-                println!("{:?} // State transfer finished. Registering result and comparing with log transfer result", NetworkNode::id(&*self.node));
 
                 self.executor_handle.poll_state_channel()?;
 
@@ -512,7 +509,6 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
     /// Handles receiving the log transfer finalized
     fn handle_log_transfer_done(&mut self, initial_seq: SeqNo, last_seq: SeqNo) -> Result<()> {
         info!("Handling log transfer result {:?} to {:?} with current phase {:?}", initial_seq, last_seq, self.transfer_states);
-        println!("Handling log transfer result {:?} to {:?} with current phase {:?}", initial_seq, last_seq, self.transfer_states);
 
         let prev_state = std::mem::replace(&mut self.transfer_states, TransferPhase::NotRunning);
 
@@ -541,7 +537,6 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
     /// Handles receiving the state transfer state
     fn handle_state_transfer_done(&mut self, seq: SeqNo) -> Result<()> {
         info!("Handling state transfer result {:?} with current phase {:?}", seq, self.transfer_states);
-        println!("Handling state transfer result {:?} with current phase {:?}", seq, self.transfer_states);
 
         let prev_state = std::mem::replace(&mut self.transfer_states, TransferPhase::NotRunning);
 
@@ -846,11 +841,9 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
         match &self.transfer_states {
             TransferPhase::NotRunning => unreachable!(),
             TransferPhase::RunningTransferProtocols { log_transfer, state_transfer } => {
-                println!("FINISH STATE TRANSFER");
                 match (log_transfer, state_transfer) {
                     (LogTransferState::Done(initial_seq, final_seq), StateTransferState::Done(state_transfer_seq)) => {
                         if (state_transfer_seq.next() < *initial_seq || state_transfer_seq.next() > *final_seq) && (*state_transfer_seq != SeqNo::ZERO && *initial_seq != SeqNo::ZERO) {
-                            println!("{:?} // Log transfer protocol and state transfer protocol are not in sync. Received {:?} state and {:?} - {:?} log", self.id(), *state_transfer_seq, * initial_seq, * final_seq);
                             error!("{:?} // Log transfer protocol and state transfer protocol are not in sync. Received {:?} state and {:?} - {:?} log", self.id(), *state_transfer_seq, * initial_seq, * final_seq);
 
                             self.run_transfer_protocols()?;
@@ -861,7 +854,6 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
                                 to_execute_seq = state_transfer_seq.next();
                             }
 
-                            println!("{:?} // State transfer protocol and log transfer protocol are in sync. Received {:?} state and {:?} - {:?} log", self.id(), *state_transfer_seq, * initial_seq, * final_seq);
                             info!("{:?} // State transfer protocol and log transfer protocol are in sync. Received {:?} state and {:?} - {:?} log", self.id(), *state_transfer_seq, * initial_seq, * final_seq);
 
                             // We now have to report to the decision log that he can send the executions to the executor
@@ -886,7 +878,6 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
         };
 
         info!("{:?} // Running state and log transfer protocols. {:?}", NetworkNode::id(&*self.node), self.transfer_states);
-        println!("{:?} // Running state and log transfer protocols. {:?}", NetworkNode::id(&*self.node), self.transfer_states);
 
         self.state_transfer_handle.send_work_message(StateTransferWorkMessage::RequestLatestState(self.view()));
         self.decision_log_handle.send_work(DLWorkMessage::init_log_transfer_message(self.view(), LogTransferWorkMessage::RequestLogTransfer));
@@ -1291,7 +1282,7 @@ impl NetworkView for MockView {
 /// Every `PERIOD` messages, the message log is cleared,
 /// and a new log checkpoint is initiated.
 /// TODO: Move this to an env variable as it can be highly dependent on the service implemented on top of it
-pub const CHECKPOINT_PERIOD: u32 = 25000;
+pub const CHECKPOINT_PERIOD: u32 = 2500;
 
 #[derive(Error, Debug)]
 pub enum SMRReplicaError {
