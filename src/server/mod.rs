@@ -354,7 +354,6 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
 
     fn run_order_protocol(&mut self) -> Result<()> {
         let poll_result = self.ordering_protocol.poll()?;
-        println!("running order protocol");
 
         match poll_result {
             OPPollResult::RePoll => {}
@@ -370,6 +369,8 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
                 metric_duration(REPLICA_TAKE_FROM_NETWORK_ID, start.elapsed());
 
                 if let Some(network_message) = network_message {
+                            println!("Message: {:?}", network_message);
+
                     let (header, message) = network_message.into_inner();
                     match message {
                         SystemMessage::ProtocolMessage(protocol) => {
