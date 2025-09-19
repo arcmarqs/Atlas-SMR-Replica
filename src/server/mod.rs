@@ -354,6 +354,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
 
     fn run_order_protocol(&mut self) -> Result<()> {
         let poll_result = self.ordering_protocol.poll()?;
+        println!("running order protocol");
 
         match poll_result {
             OPPollResult::RePoll => {}
@@ -370,7 +371,6 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
 
                 if let Some(network_message) = network_message {
                     let (header, message) = network_message.into_inner();
-                    println!("message: {:?}", message);
                     match message {
                         SystemMessage::ProtocolMessage(protocol) => {
                             let message = Arc::new(ReadOnly::new(StoredMessage::new(header, protocol.into_inner())));
