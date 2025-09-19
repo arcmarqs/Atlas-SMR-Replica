@@ -358,6 +358,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
         match poll_result {
             OPPollResult::RePoll => {}
             OPPollResult::RunCst => {
+                println!("running cst");
                 self.run_transfer_protocols()?;
             }
             OPPollResult::ReceiveMsg => {
@@ -369,7 +370,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
 
                 if let Some(network_message) = network_message {
                     let (header, message) = network_message.into_inner();
-
+                    println!("message: {:?}", message);
                     match message {
                         SystemMessage::ProtocolMessage(protocol) => {
                             let message = Arc::new(ReadOnly::new(StoredMessage::new(header, protocol.into_inner())));
