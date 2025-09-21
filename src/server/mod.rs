@@ -373,7 +373,6 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
                     match message {
                         SystemMessage::ProtocolMessage(protocol) => {
                             let message = Arc::new(ReadOnly::new(StoredMessage::new(header, protocol.into_inner())));
-                            println!("protocol message");
                             self.execute_order_protocol_message(message)?;
                         }
                         SystemMessage::ViewTransferMessage(view_transfer) => {
