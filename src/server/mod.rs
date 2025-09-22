@@ -1092,7 +1092,6 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> PermissionedProtocolHandling<D, S, VT
                         }
                         SystemMessage::StateTransferMessage(state_transfer_msg) => {
                             let strd_msg = StoredMessage::new(header, state_transfer_msg.into_inner());
-                            println!("state transfer : {:?}", strd_msg);
                             self.state_transfer_handle.send_work_message(StateTransferWorkMessage::StateTransferMessage(self.view(), strd_msg));
                         }
                         SystemMessage::ForwardedRequestMessage(fwd_reqs) => {
@@ -1114,6 +1113,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> PermissionedProtocolHandling<D, S, VT
                             let strd_msg = StoredMessage::new(header, log_transfer.into_inner());
 
                             let work_msg = DLWorkMessage::init_log_transfer_message(view, LogTransferWorkMessage::LogTransferMessage(strd_msg));
+                            println!("log transfer : {:?}", strd_msg);
 
                             self.decision_log_handle.send_work(work_msg);
                         }
