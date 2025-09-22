@@ -1113,7 +1113,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> PermissionedProtocolHandling<D, S, VT
                             let strd_msg = StoredMessage::new(header, log_transfer.into_inner());
 
                             let work_msg = DLWorkMessage::init_log_transfer_message(view, LogTransferWorkMessage::LogTransferMessage(strd_msg));
-                            println!("log transfer : {:?}", strd_msg);
+                            println!("log transfer");
 
                             self.decision_log_handle.send_work(work_msg);
                         }
