@@ -1140,6 +1140,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> PermissionedProtocolHandling<D, S, VT
 
     fn handle_view_transfer_msg(&mut self, message: StoredMessage<VTMsg<VT::Serialization>>) -> Result<()>
         where NT: ViewTransferProtocolSendNode<VT::Serialization> {
+            println!("view transfer {:?}", message);
         match self.execution_state {
             ExecutionPhase::OrderProtocol => {
                 self.view_transfer_protocol.handle_off_context_msg(&self.ordering_protocol, message)?;
