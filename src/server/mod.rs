@@ -1113,7 +1113,6 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> PermissionedProtocolHandling<D, S, VT
                             let strd_msg = StoredMessage::new(header, log_transfer.into_inner());
 
                             let work_msg = DLWorkMessage::init_log_transfer_message(view, LogTransferWorkMessage::LogTransferMessage(strd_msg));
-                            println!("log transfer");
 
                             self.decision_log_handle.send_work(work_msg);
                         }
@@ -1140,7 +1139,6 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> PermissionedProtocolHandling<D, S, VT
 
     fn handle_view_transfer_msg(&mut self, message: StoredMessage<VTMsg<VT::Serialization>>) -> Result<()>
         where NT: ViewTransferProtocolSendNode<VT::Serialization> {
-            println!("view transfer {:?}", message);
         match self.execution_state {
             ExecutionPhase::OrderProtocol => {
                 self.view_transfer_protocol.handle_off_context_msg(&self.ordering_protocol, message)?;
