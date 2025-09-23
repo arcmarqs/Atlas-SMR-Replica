@@ -1282,7 +1282,7 @@ impl NetworkView for MockView {
 /// TODO: Move this to an env variable as it can be highly dependent on the service implemented on top of it
 /// 
 
-pub const CHECKPOINT_PERIOD: u32 = 45000;
+pub const CHECKPOINT_PERIOD: u32 = 30000;
 
 #[derive(Error, Debug)]
 pub enum SMRReplicaError {
