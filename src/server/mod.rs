@@ -41,7 +41,7 @@ use atlas_core::smr::smr_decision_log::{DecisionLog, LoggedDecision, LoggedDecis
 use atlas_core::state_transfer::{StateTransferProtocol, STPollResult, STResult, STTimeoutResult};
 use atlas_core::timeouts::{RqTimeout, TimedOut, TimeoutKind, Timeouts};
 use atlas_metrics::metrics::{metric_duration, metric_increment};
-use atlas_persistent_log::NoPersistentLog;
+use atlas_persistent_log::{NoPersistentLog, OptimisticPersistentLog, StrictPersistentLog};
 use atlas_smr_application::ExecutorHandle;
 use atlas_smr_application::serialize::ApplicationData;
 
@@ -272,7 +272,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
         let (rq_pre_processor, batch_input) = initialize_request_pre_processor
             ::<WDRoundRobin, D, OP::Serialization, ST::Serialization, LT::Serialization, VT::Serialization, NT>(4, node.clone());
 
-        let persistent_log = PL::init_log::<String, NoPersistentLog, OP, ST, DL>(executor.clone(), db_path)?;
+        let persistent_log = PL::init_log::<String, StrictPersistentLog, OP, ST, DL>(executor.clone(), db_path)?;
 
         let log = persistent_log.read_decision_log(OperationMode::BlockingSync)?;
 
