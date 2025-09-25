@@ -272,7 +272,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
         let (rq_pre_processor, batch_input) = initialize_request_pre_processor
             ::<WDRoundRobin, D, OP::Serialization, ST::Serialization, LT::Serialization, VT::Serialization, NT>(4, node.clone());
 
-        let persistent_log = PL::init_log::<String, OptimisticPersistentLog, OP, ST, DL>(executor.clone(), db_path)?;
+        let persistent_log = PL::init_log::<String, NoPersistentLog, OP, ST, DL>(executor.clone(), db_path)?;
 
         let log = persistent_log.read_decision_log(OperationMode::BlockingSync)?;
 
