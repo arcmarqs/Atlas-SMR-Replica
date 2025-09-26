@@ -12,8 +12,8 @@ use atlas_core::state_transfer::{StateTransferProtocol, STMsg, STPollResult, STR
 use atlas_core::state_transfer::networking::serialize::StateTransferMessage;
 use atlas_core::timeouts::RqTimeout;
 
-pub const WORK_CHANNEL_SIZE: usize = 2;
-pub const RESPONSE_CHANNEL_SIZE: usize = 2;
+pub const WORK_CHANNEL_SIZE: usize = 1;
+pub const RESPONSE_CHANNEL_SIZE: usize = 1;
 
 /// A state transfer work message
 pub enum StateTransferWorkMessage<V, ST> where V: NetworkView {
@@ -116,13 +116,14 @@ impl<V, S, NT, PL, ST> StateTransferMngr<V, S, NT, PL, ST>
 
                     if self.currently_running {
                         let result = state_transfer.process_message(view, message);
-
                         if let Ok(st_result) = result {
                             let _ = self.handle.response_tx.send_return(StateTransferProgress::StateTransferProgress(st_result));
                         }
+
                     } else {
                         let _ = state_transfer.handle_off_ctx_message(view, message);
                     }
+
                 }
                 StateTransferWorkMessage::Timeout(view, timeout) => {
                     self.handle_view(&view);
