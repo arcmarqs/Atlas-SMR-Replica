@@ -12,7 +12,7 @@ use atlas_core::state_transfer::{StateTransferProtocol, STMsg, STPollResult, STR
 use atlas_core::state_transfer::networking::serialize::StateTransferMessage;
 use atlas_core::timeouts::RqTimeout;
 
-pub const WORK_CHANNEL_SIZE: usize = 64;
+pub const WORK_CHANNEL_SIZE: usize = 256;
 pub const RESPONSE_CHANNEL_SIZE: usize = 64;
 
 /// A state transfer work message
