@@ -483,9 +483,7 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
 
     fn handle_state_transfer_result(&mut self, result: STResult) -> Result<()> {
         match result {
-            STResult::StateTransferRunning => {
-                println!("State transfer running");
-            }
+            STResult::StateTransferRunning => (),
             STResult::StateTransferReady => {
                 println!(" State transfer ready");
                 self.executor_handle.poll_state_channel()?;
