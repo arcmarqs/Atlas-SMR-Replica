@@ -485,12 +485,10 @@ impl<RP, S, D, OP, DL, ST, LT, VT, NT, PL> Replica<RP, S, D, OP, DL, ST, LT, VT,
         match result {
             STResult::StateTransferRunning => (),
             STResult::StateTransferReady => {
-                println!(" State transfer ready");
                 self.executor_handle.poll_state_channel()?;
             }
             STResult::StateTransferFinished(seq_no) => {
                 info!("{:?} // State transfer finished. Registering result and comparing with log transfer result", NetworkNode::id(&*self.node));
-                println!(" State transfer finished");
                 self.executor_handle.poll_state_channel()?;
 
                 self.handle_state_transfer_done(seq_no)?;
