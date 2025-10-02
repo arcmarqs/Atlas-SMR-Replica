@@ -293,7 +293,6 @@ impl<V, D, OP, DL, LT, STM, NT, PL> DecisionLogManager<V, D, OP, DL, LT, STM, NT
                 self.decision_log.install_proof(proof)?;
             }
             DecisionLogWorkMessage::CheckpointDone(seq) => {
-                println!("CHECKPOINT DONE {:?}", seq);
                 self.decision_log.state_checkpoint(seq)?;
             }
         }
