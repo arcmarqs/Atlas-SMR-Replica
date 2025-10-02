@@ -726,6 +726,7 @@ where
 
         // We know that the log transfer is already done, so if the state transfer is done then they are both done
         if Self::is_state_transfer_done(&self.transfer_states) {
+            println!("STATE TRANSFER DONE AND LOG TRANSFER DONE IN LT");
             self.finish_transfer()?;
         }
 
@@ -770,6 +771,7 @@ where
 
         // We know that the state transfer is already done, so if the log transfer is also done, then they are both done
         if Self::is_log_transfer_done(&self.transfer_states) {
+            println!("STATE TRANSFER DONE AND LOG TRANSFER DONE IN ST");
             self.finish_transfer()?;
         }
 
@@ -1121,6 +1123,7 @@ where
                             && (*state_transfer_seq != SeqNo::ZERO && *initial_seq != SeqNo::ZERO)
                         {
                             error!("{:?} // Log transfer protocol and state transfer protocol are not in sync. Received {:?} state and {:?} - {:?} log", self.id(), *state_transfer_seq, * initial_seq, * final_seq);
+                            println!("{:?} // Log transfer protocol and state transfer protocol are not in sync. Received {:?} state and {:?} - {:?} log", self.id(), *state_transfer_seq, * initial_seq, * final_seq);
 
                             self.run_transfer_protocols()?;
 
@@ -1133,14 +1136,16 @@ where
                             }
 
                             info!("{:?} // State transfer protocol and log transfer protocol are in sync. Received {:?} state and {:?} - {:?} log", self.id(), *state_transfer_seq, * initial_seq, * final_seq);
+                            println!("{:?} // State transfer protocol and log transfer protocol are in sync. Received {:?} state and {:?} - {:?} log", self.id(), *state_transfer_seq, * initial_seq, * final_seq);
 
                             // We now have to report to the decision log that he can send the executions to the executor
 
+                            println!("init log transfer message {:?} {:?}", to_execute_seq, final_seq);
                             let decision_log_work = DLWorkMessage::init_log_transfer_message(
                                 self.view(),
                                 LogTransferWorkMessage::TransferDone(to_execute_seq, *final_seq),
                             );
-
+                            println!("DECISION LOG WORK {:?}", decision_log_work.sequence_number());
                             self.decision_log_handle.send_work(decision_log_work);
 
                             true
