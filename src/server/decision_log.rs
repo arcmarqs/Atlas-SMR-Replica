@@ -242,23 +242,19 @@ impl<V, D, OP, DL, LT, STM, NT, PL> DecisionLogManager<V, D, OP, DL, LT, STM, NT
     fn handle_log_transfer_work(&mut self, view: V, lt_work: LogTransferWorkMessage<D, OP::Serialization, LT::Serialization>) -> Result<()> {
         match self.active_phase {
             ActivePhase::LogTransfer => {
-                println!("log transfer log transfer");
                 self.run_log_transfer_work_message(view, lt_work)?;
             }
             ActivePhase::DecisionLog => {
 
                 match lt_work {
                     LogTransferWorkMessage::RequestLogTransfer => {
-                        println!("Request log transfer");
 
                         self.run_log_transfer_protocol(view)?;
                     }
                     LogTransferWorkMessage::LogTransferMessage(message) => {
-                        println!("log transfer message");
                         self.log_transfer.handle_off_ctx_message(&mut self.decision_log, view, message)?;
                     }
                     LogTransferWorkMessage::ReceivedTimeout(timeouts) => {
-                        println!("timeout");
                         match self.log_transfer.handle_timeout(view.clone(), timeouts)? {
                             LTTimeoutResult::RunLTP => self.run_log_transfer_protocol(view)?,
                             LTTimeoutResult::NotNeeded => {
@@ -317,16 +313,19 @@ impl<V, D, OP, DL, LT, STM, NT, PL> DecisionLogManager<V, D, OP, DL, LT, STM, NT
                     }
                     LTResult::NotNeeded => {
                         info!("Log transfer protocol is not necessary, running decision log protocol");
+                        println!("Log transfer protocol is not necessary, running decision log protocol");
 
                         let _ = self.order_protocol_tx.send_return(ReplicaWorkResponses::LogTransferNotNeeded(self.decision_log.first_sequence(), self.decision_log.sequence_number()));
                     }
                     LTResult::Running | LTResult::Ignored => {}
                     LTResult::InstallSeq(seq) => {
+                        println!("install seq");
+
                         let _ = self.order_protocol_tx.send_return(ReplicaWorkResponses::InstallSeqNo(seq.next()));
                     }
                     LTResult::LTPFinished(init_seq, last_se, decisions_to_execute) => {
                         self.pending_decisions_to_execute = Some(decisions_to_execute);
-
+                        println!("ltp finished");
                         let _ = self.order_protocol_tx.send_return(ReplicaWorkResponses::LogTransferFinalized(init_seq, last_se));
                     }
                     
@@ -337,6 +336,7 @@ impl<V, D, OP, DL, LT, STM, NT, PL> DecisionLogManager<V, D, OP, DL, LT, STM, NT
             }
             LogTransferWorkMessage::TransferDone(start, end) => {
                 info!("Received transfer done order from replica with seq {:?}, ending at {:?}", start, end);
+                println!("Received transfer done order from replica with seq {:?}, ending at {:?}", start, end);
 
                 if let Some(decisions) = self.pending_decisions_to_execute.take() {
                     decisions.into_iter().for_each(|decision| {
