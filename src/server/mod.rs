@@ -642,13 +642,19 @@ where
                         "Installing sequence number {:?} into order protocol",
                         seq_no
                     );
+                     println!(
+                        "Installing sequence number {:?} into order protocol",
+                        seq_no
+                    );
                     self.ordering_protocol.install_seq_no(seq_no)?;
                     debug!("Done installing");
                 }
                 ReplicaWorkResponses::LogTransferFinalized(first_seq, last_seq) => {
+                     println!("log transfer finalized {:?} {:?}", first_seq, last_seq);
                     self.handle_log_transfer_done(first_seq, last_seq)?;
                 }
                 ReplicaWorkResponses::LogTransferNotNeeded(first_seq, last_seq) => {
+                    println!("log transfer not needed {:?} {:?}", first_seq, last_seq);
                     self.handle_log_transfer_done(first_seq, last_seq)?;
                 }
             }
@@ -687,6 +693,11 @@ where
             initial_seq, last_seq, self.transfer_states
         );
 
+         println!(
+            "Handling log transfer result {:?} to {:?} with current phase {:?}",
+            initial_seq, last_seq, self.transfer_states
+        );
+
         let prev_state = std::mem::replace(&mut self.transfer_states, TransferPhase::NotRunning);
 
         self.transfer_states = match prev_state {
@@ -697,6 +708,8 @@ where
                 log_transfer,
                 state_transfer,
             } => {
+
+                println!("RUNNING LOG TRANSFER {:?} {:?}", log_transfer, state_transfer);
                 match log_transfer {
                     LogTransferState::Idle => {
                         unreachable!("Received result of the log transfer while not running it?")
@@ -740,6 +753,7 @@ where
                 log_transfer,
                 state_transfer,
             } => {
+                println!("Running transfer protocols ST {:?} {:?}", log_transfer, state_transfer);
                 match log_transfer {
                     LogTransferState::Idle => {
                         unreachable!("Received result of the log transfer while not running it?")
