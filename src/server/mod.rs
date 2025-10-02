@@ -1157,6 +1157,7 @@ where
         };
 
         if done {
+            println!("transfer not running");
             self.transfer_states = TransferPhase::NotRunning;
         }
 
@@ -1511,7 +1512,7 @@ where
                                 view,
                                 LogTransferWorkMessage::LogTransferMessage(strd_msg),
                             );
-
+                            println!("sending work message");
                             self.decision_log_handle.send_work(work_msg);
                         }
                         _ => {
