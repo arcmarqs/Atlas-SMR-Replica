@@ -1145,7 +1145,6 @@ where
                                 self.view(),
                                 LogTransferWorkMessage::TransferDone(to_execute_seq, *final_seq),
                             );
-                            println!("DECISION LOG WORK {:?}", decision_log_work.sequence_number());
                             self.decision_log_handle.send_work(decision_log_work);
 
                             true
