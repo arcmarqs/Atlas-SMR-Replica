@@ -205,7 +205,6 @@ impl<V, D, OP, DL, LT, STM, NT, PL> DecisionLogManager<V, D, OP, DL, LT, STM, NT
 
                 match message {
                     DLWorkMessageType::DecisionLog(dl_message) => {
-                        println!("handle decision log work");
                         self.handle_decision_log_work(dl_message)?;
                     }
                     DLWorkMessageType::LogTransfer(lt_message) => {
@@ -234,7 +233,6 @@ impl<V, D, OP, DL, LT, STM, NT, PL> DecisionLogManager<V, D, OP, DL, LT, STM, NT
                 self.run_decision_log_work_message(dl_work)?;
             }
             ActivePhase::LogTransfer => {
-                println!("PUSHING BACK LOG MESSAGE");
                 self.decision_log_pending_queue.work_queue.push_back(dl_work);
             }
         }
@@ -276,18 +274,14 @@ impl<V, D, OP, DL, LT, STM, NT, PL> DecisionLogManager<V, D, OP, DL, LT, STM, NT
     fn run_decision_log_work_message(&mut self, dl_work: DecisionLogWorkMessage<D, OP::Serialization, OP::PersistableTypes>) -> Result<()> {
         match dl_work {
             DecisionLogWorkMessage::ClearSequenceNumber(clear_seq_no) => {
-                println!("CLEAR SQNO");
 
                 self.decision_log.clear_sequence_number(clear_seq_no)?;
             }
             DecisionLogWorkMessage::ClearUnfinishedDecisions => {
-                println!("CLEAR UNFINISHED DECISIONS");
 
                 self.decision_log.clear_decisions_forward(self.decision_log.sequence_number())?;
             }
             DecisionLogWorkMessage::DecisionInformation(decision_info) => {
-                                println!("DECISION INFO");
-
                 for decision in decision_info.into_iter() {
                     let decisions_made = self.decision_log.decision_information_received(decision)?;
 
@@ -295,8 +289,6 @@ impl<V, D, OP, DL, LT, STM, NT, PL> DecisionLogManager<V, D, OP, DL, LT, STM, NT
                 }
             }
             DecisionLogWorkMessage::Proof(proof) => {
-                                println!("PROOF");
-
                 self.decision_log.install_proof(proof)?;
             }
             DecisionLogWorkMessage::CheckpointDone(seq) => {
