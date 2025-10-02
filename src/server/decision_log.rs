@@ -208,7 +208,6 @@ impl<V, D, OP, DL, LT, STM, NT, PL> DecisionLogManager<V, D, OP, DL, LT, STM, NT
                         self.handle_decision_log_work(dl_message)?;
                     }
                     DLWorkMessageType::LogTransfer(lt_message) => {
-                        println!("handle log transfer work");
                         self.handle_log_transfer_work(view, lt_message)?;
                     }
                 }
@@ -243,17 +242,23 @@ impl<V, D, OP, DL, LT, STM, NT, PL> DecisionLogManager<V, D, OP, DL, LT, STM, NT
     fn handle_log_transfer_work(&mut self, view: V, lt_work: LogTransferWorkMessage<D, OP::Serialization, LT::Serialization>) -> Result<()> {
         match self.active_phase {
             ActivePhase::LogTransfer => {
+                println!("log transfer log transfer");
                 self.run_log_transfer_work_message(view, lt_work)?;
             }
             ActivePhase::DecisionLog => {
+
                 match lt_work {
                     LogTransferWorkMessage::RequestLogTransfer => {
+                        println!("Request log transfer");
+
                         self.run_log_transfer_protocol(view)?;
                     }
                     LogTransferWorkMessage::LogTransferMessage(message) => {
+                        println!("log transfer message");
                         self.log_transfer.handle_off_ctx_message(&mut self.decision_log, view, message)?;
                     }
                     LogTransferWorkMessage::ReceivedTimeout(timeouts) => {
+                        println!("timeout");
                         match self.log_transfer.handle_timeout(view.clone(), timeouts)? {
                             LTTimeoutResult::RunLTP => self.run_log_transfer_protocol(view)?,
                             LTTimeoutResult::NotNeeded => {
