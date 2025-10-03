@@ -642,19 +642,14 @@ where
                         "Installing sequence number {:?} into order protocol",
                         seq_no
                     );
-                     println!(
-                        "Installing sequence number {:?} into order protocol",
-                        seq_no
-                    );
+                    
                     self.ordering_protocol.install_seq_no(seq_no)?;
                     debug!("Done installing");
                 }
                 ReplicaWorkResponses::LogTransferFinalized(first_seq, last_seq) => {
-                     println!("log transfer finalized {:?} {:?}", first_seq, last_seq);
                     self.handle_log_transfer_done(first_seq, last_seq)?;
                 }
                 ReplicaWorkResponses::LogTransferNotNeeded(first_seq, last_seq) => {
-                    println!("log transfer not needed {:?} {:?}", first_seq, last_seq);
                     self.handle_log_transfer_done(first_seq, last_seq)?;
                 }
             }
@@ -693,11 +688,6 @@ where
             initial_seq, last_seq, self.transfer_states
         );
 
-         println!(
-            "Handling log transfer result {:?} to {:?} with current phase {:?}",
-            initial_seq, last_seq, self.transfer_states
-        );
-
         let prev_state = std::mem::replace(&mut self.transfer_states, TransferPhase::NotRunning);
 
         self.transfer_states = match prev_state {
@@ -709,7 +699,6 @@ where
                 state_transfer,
             } => {
 
-                println!("RUNNING LOG TRANSFER {:?} {:?}", log_transfer, state_transfer);
                 match log_transfer {
                     LogTransferState::Idle => {
                         unreachable!("Received result of the log transfer while not running it?")
@@ -726,7 +715,7 @@ where
 
         // We know that the log transfer is already done, so if the state transfer is done then they are both done
         if Self::is_state_transfer_done(&self.transfer_states) {
-            println!("STATE TRANSFER DONE AND LOG TRANSFER DONE IN LT");
+            // println!("STATE TRANSFER DONE AND LOG TRANSFER DONE IN LT");
             self.finish_transfer()?;
         }
 
@@ -739,10 +728,10 @@ where
             "Handling state transfer result {:?} with current phase {:?}",
             seq, self.transfer_states
         );
-        println!(
-            "Handling state transfer result {:?} with current phase {:?}",
-            seq, self.transfer_states
-        );
+        // println!(
+        //     "Handling state transfer result {:?} with current phase {:?}",
+        //     seq, self.transfer_states
+        // );
 
         let prev_state = std::mem::replace(&mut self.transfer_states, TransferPhase::NotRunning);
 
@@ -754,7 +743,7 @@ where
                 log_transfer,
                 state_transfer,
             } => {
-                println!("Running transfer protocols ST {:?} {:?}", log_transfer, state_transfer);
+                // println!("Running transfer protocols ST {:?} {:?}", log_transfer, state_transfer);
                 match log_transfer {
                     LogTransferState::Idle => {
                         unreachable!("Received result of the log transfer while not running it?")
@@ -771,7 +760,7 @@ where
 
         // We know that the state transfer is already done, so if the log transfer is also done, then they are both done
         if Self::is_log_transfer_done(&self.transfer_states) {
-            println!("STATE TRANSFER DONE AND LOG TRANSFER DONE IN ST");
+            // println!("STATE TRANSFER DONE AND LOG TRANSFER DONE IN ST");
             self.finish_transfer()?;
         }
 
@@ -1123,7 +1112,6 @@ where
                             && (*state_transfer_seq != SeqNo::ZERO && *initial_seq != SeqNo::ZERO)
                         {
                             error!("{:?} // Log transfer protocol and state transfer protocol are not in sync. Received {:?} state and {:?} - {:?} log", self.id(), *state_transfer_seq, * initial_seq, * final_seq);
-                            println!("{:?} // Log transfer protocol and state transfer protocol are not in sync. Received {:?} state and {:?} - {:?} log", self.id(), *state_transfer_seq, * initial_seq, * final_seq);
 
                             self.run_transfer_protocols()?;
 
@@ -1136,11 +1124,9 @@ where
                             }
 
                             info!("{:?} // State transfer protocol and log transfer protocol are in sync. Received {:?} state and {:?} - {:?} log", self.id(), *state_transfer_seq, * initial_seq, * final_seq);
-                            println!("{:?} // State transfer protocol and log transfer protocol are in sync. Received {:?} state and {:?} - {:?} log", self.id(), *state_transfer_seq, * initial_seq, * final_seq);
 
                             // We now have to report to the decision log that he can send the executions to the executor
 
-                            println!("init log transfer message {:?} {:?}", to_execute_seq, final_seq);
                             let decision_log_work = DLWorkMessage::init_log_transfer_message(
                                 self.view(),
                                 LogTransferWorkMessage::TransferDone(to_execute_seq, *final_seq),
@@ -1157,7 +1143,6 @@ where
         };
 
         if done {
-            println!("transfer not running");
             self.transfer_states = TransferPhase::NotRunning;
         }
 
@@ -1512,7 +1497,6 @@ where
                                 view,
                                 LogTransferWorkMessage::LogTransferMessage(strd_msg),
                             );
-                            println!("sending work message");
                             self.decision_log_handle.send_work(work_msg);
                         }
                         _ => {
