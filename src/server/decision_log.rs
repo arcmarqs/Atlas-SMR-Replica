@@ -510,11 +510,14 @@ impl<V, D, OPM, POT, LTM> DecisionLogHandle<V, D, OPM, POT, LTM>
           POT: PersistentOrderProtocolTypes<D, OPM>,
           LTM: LogTransferMessage<D, OPM> {
     pub fn send_work(&self, work_message: DLWorkMessage<V, D, OPM, POT, LTM>) {
-        match self.work_tx.send_return(work_message) {
+        if self.work_tx.is_full() {
+            error!("DEC LOG is full might not insert {:?}", &work_message)
+        }
+        
+        match self.work_tx.send(work_message) {
             Ok(_) => (),
             Err(e) => {
-                error!("DEC LOG could not insert {:?} into channel",e );
-                println!("DEC LOG could not insert {:?} into channel",e );
+                error!("DEC LOG could not insert {:?}",e );
 
             },
         }

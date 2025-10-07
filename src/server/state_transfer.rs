@@ -186,12 +186,13 @@ impl<V, S, NT, PL, ST> StateTransferMngr<V, S, NT, PL, ST>
 impl<V, ST> StateTransferThreadHandle<V, ST> where V: NetworkView,
                                                    ST: StateTransferMessage {
     pub fn send_work_message(&self, msg: StateTransferWorkMessage<V, STMsg<ST>>) {
-        match self.work_tx.send_return(msg) {
+        if self.work_tx.is_full() {
+            error!("STATE WORK: Could not insert {:?}", &msg);
+        }
+        match self.work_tx.send(msg) {
             Ok(_) => (),
             Err(e) => {
                 error!("STATE WORK: Could not insert {:?}", e);
-                println!("STATE WORK: Could not insert {:?}", e);
-
             },
         }
     }
