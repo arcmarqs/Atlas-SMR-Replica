@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::sync::Arc;
 use either::Either;
@@ -55,6 +56,18 @@ pub enum DecisionLogWorkMessage<D, OPM, POT>
     CheckpointDone(SeqNo),
 }
 
+impl Debug for DecisionLogWorkMessage<D, OPM, POT> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ClearSequenceNumber(arg0) => f.debug_tuple("ClearSequenceNumber").field(arg0).finish(),
+            Self::ClearUnfinishedDecisions => write!(f, "ClearUnfinishedDecisions"),
+            Self::DecisionInformation(arg0) => f.debug_tuple("DecisionInformation").finish(),
+            Self::Proof(arg0) => f.debug_tuple("Proof").finish(),
+            Self::CheckpointDone(arg0) => f.debug_tuple("CheckpointDone").field(arg0).finish(),
+        }
+    }
+}
+
 /// Messages that are destined to the replica so it can piece
 /// together the current state of the decision log
 pub enum ReplicaWorkResponses {
@@ -73,6 +86,17 @@ pub enum LogTransferWorkMessage<D, OPM, LTM>
     TransferDone(SeqNo, SeqNo),
 }
 
+impl Debug for LogTransferWorkMessage<D,OPM,LTM> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::RequestLogTransfer => write!(f, "RequestLogTransfer"),
+            Self::LogTransferMessage(arg0) => f.debug_tuple("LogTransferMessage").finish(),
+            Self::ReceivedTimeout(arg0) => f.debug_tuple("ReceivedTimeout").finish(),
+            Self::TransferDone(arg0, arg1) => f.debug_tuple("TransferDone").field(arg0).field(arg1).finish(),
+        }
+    }
+}
+
 pub enum DLWorkMessageType<D, OPM, POT, LTM>
     where D: ApplicationData + 'static,
           OPM: OrderingProtocolMessage<D>,
@@ -81,7 +105,14 @@ pub enum DLWorkMessageType<D, OPM, POT, LTM>
     DecisionLog(DecisionLogWorkMessage<D, OPM, POT>),
     LogTransfer(LogTransferWorkMessage<D, OPM, LTM>),
 }
-
+impl Debug for DLWorkMessageType<D, OPM, POT, LTM> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::DecisionLog(arg0) => f.debug_tuple("DecisionLog").field(arg0).finish(),
+            Self::LogTransfer(arg0) => f.debug_tuple("LogTransfer").field(arg0).finish(),
+        }
+    }
+}
 pub struct DLWorkMessage<V, D, OPM, POT, LTM>
     where V: NetworkView,
           D: ApplicationData + 'static,
@@ -90,6 +121,15 @@ pub struct DLWorkMessage<V, D, OPM, POT, LTM>
           LTM: LogTransferMessage<D, OPM> {
     view: V,
     message: DLWorkMessageType<D, OPM, POT, LTM>,
+}
+
+impl Debug for DLWorkMessage<V, D, OPM, POT, LTM> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DLWorkMessage")
+        .field("view", &self.view)
+        .field("message", &self.message)
+        .finish()
+    }
 }
 
 pub enum DecisionLogResponseMessage<D> where D: ApplicationData {
@@ -455,7 +495,12 @@ impl<V, D, OPM, POT, LTM> DecisionLogHandle<V, D, OPM, POT, LTM>
           POT: PersistentOrderProtocolTypes<D, OPM>,
           LTM: LogTransferMessage<D, OPM> {
     pub fn send_work(&self, work_message: DLWorkMessage<V, D, OPM, POT, LTM>) {
-        let _ = self.work_tx.send_return(work_message);
+        match self.work_tx.send_return(work_message) {
+            Ok(_) => (),
+            Err(e) => {
+                error!("could not insert {:?} into channel", e);
+            },
+        }
     }
 
     pub fn recv_resp(&self) -> ReplicaWorkResponses {
