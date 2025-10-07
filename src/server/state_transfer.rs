@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::marker::PhantomData;
 use either::Either;
 use log::error;
@@ -21,6 +22,18 @@ pub enum StateTransferWorkMessage<V, ST> where V: NetworkView {
     StateTransferMessage(V, StoredMessage<ST>),
     Timeout(V, Vec<RqTimeout>),
     ShouldRequestAppState(SeqNo, OneShotTx<ExecutionResult>),
+}
+
+impl<V, ST> Debug for StateTransferWorkMessage<V, ST>  where V: NetworkView 
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::RequestLatestState(arg0) => f.debug_tuple("RequestLatestState").field(&arg0.sequence_number()).finish(),
+            Self::StateTransferMessage(arg0, arg1) => f.debug_tuple("StateTransferMessage").field(&arg0.sequence_number()).finish(),
+            Self::Timeout(arg0, arg1) => f.debug_tuple("Timeout").field(&arg0.sequence_number()).finish(),
+            Self::ShouldRequestAppState(arg0, arg1) => f.debug_tuple("ShouldRequestAppState").field(arg0).finish(),
+        }
+    }
 }
 
 /// Response message of the state transfer protocol
@@ -173,7 +186,14 @@ impl<V, S, NT, PL, ST> StateTransferMngr<V, S, NT, PL, ST>
 impl<V, ST> StateTransferThreadHandle<V, ST> where V: NetworkView,
                                                    ST: StateTransferMessage {
     pub fn send_work_message(&self, msg: StateTransferWorkMessage<V, STMsg<ST>>) {
-        let _ = self.work_tx.send_return(msg);
+        match self.work_tx.send_return(msg) {
+            Ok(_) => (),
+            Err(e) => {
+                error!("STATE WORK: Could not insert {:?}", e);
+                println!("STATE WORK: Could not insert {:?}", e);
+
+            },
+        }
     }
 
     pub fn receive_state_transfer_update(&self) -> StateTransferProgress {

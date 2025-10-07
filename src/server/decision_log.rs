@@ -513,7 +513,9 @@ impl<V, D, OPM, POT, LTM> DecisionLogHandle<V, D, OPM, POT, LTM>
         match self.work_tx.send_return(work_message) {
             Ok(_) => (),
             Err(e) => {
-                error!("could not insert {:?} into channel", e);
+                error!("DEC LOG could not insert {:?} into channel",e );
+                println!("DEC LOG could not insert {:?} into channel",e );
+
             },
         }
     }
