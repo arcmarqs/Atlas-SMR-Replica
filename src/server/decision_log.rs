@@ -56,13 +56,16 @@ pub enum DecisionLogWorkMessage<D, OPM, POT>
     CheckpointDone(SeqNo),
 }
 
-impl Debug for DecisionLogWorkMessage<D, OPM, POT> {
+impl<D, OPM, POT> Debug for DecisionLogWorkMessage<D, OPM, POT>
+ where D: ApplicationData,
+          OPM: OrderingProtocolMessage<D>,
+          POT: PersistentOrderProtocolTypes<D, OPM> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::ClearSequenceNumber(arg0) => f.debug_tuple("ClearSequenceNumber").field(arg0).finish(),
             Self::ClearUnfinishedDecisions => write!(f, "ClearUnfinishedDecisions"),
-            Self::DecisionInformation(arg0) => f.debug_tuple("DecisionInformation").finish(),
-            Self::Proof(arg0) => f.debug_tuple("Proof").finish(),
+            Self::DecisionInformation(_arg0) => f.debug_tuple("DecisionInformation").finish(),
+            Self::Proof(_arg0) => f.debug_tuple("Proof").finish(),
             Self::CheckpointDone(arg0) => f.debug_tuple("CheckpointDone").field(arg0).finish(),
         }
     }
@@ -86,12 +89,15 @@ pub enum LogTransferWorkMessage<D, OPM, LTM>
     TransferDone(SeqNo, SeqNo),
 }
 
-impl Debug for LogTransferWorkMessage<D,OPM,LTM> {
+impl<D, OPM, LTM> Debug for LogTransferWorkMessage<D,OPM,LTM> 
+  where D: ApplicationData,
+          OPM: OrderingProtocolMessage<D>,
+          LTM: LogTransferMessage<D, OPM>{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::RequestLogTransfer => write!(f, "RequestLogTransfer"),
-            Self::LogTransferMessage(arg0) => f.debug_tuple("LogTransferMessage").finish(),
-            Self::ReceivedTimeout(arg0) => f.debug_tuple("ReceivedTimeout").finish(),
+            Self::LogTransferMessage(_arg0) => f.debug_tuple("LogTransferMessage").finish(),
+            Self::ReceivedTimeout(_arg0) => f.debug_tuple("ReceivedTimeout").finish(),
             Self::TransferDone(arg0, arg1) => f.debug_tuple("TransferDone").field(arg0).field(arg1).finish(),
         }
     }
@@ -105,7 +111,11 @@ pub enum DLWorkMessageType<D, OPM, POT, LTM>
     DecisionLog(DecisionLogWorkMessage<D, OPM, POT>),
     LogTransfer(LogTransferWorkMessage<D, OPM, LTM>),
 }
-impl Debug for DLWorkMessageType<D, OPM, POT, LTM> {
+impl<D, OPM, POT, LTM> Debug for DLWorkMessageType<D, OPM, POT, LTM> 
+ where D: ApplicationData + 'static,
+          OPM: OrderingProtocolMessage<D>,
+          POT: PersistentOrderProtocolTypes<D, OPM>,
+          LTM: LogTransferMessage<D, OPM> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::DecisionLog(arg0) => f.debug_tuple("DecisionLog").field(arg0).finish(),
@@ -123,7 +133,12 @@ pub struct DLWorkMessage<V, D, OPM, POT, LTM>
     message: DLWorkMessageType<D, OPM, POT, LTM>,
 }
 
-impl Debug for DLWorkMessage<V, D, OPM, POT, LTM> {
+impl<V, D, OPM, POT, LTM> Debug for DLWorkMessage<V, D, OPM, POT, LTM>
+ where V: NetworkView,
+          D: ApplicationData + 'static,
+          OPM: OrderingProtocolMessage<D>,
+          POT: PersistentOrderProtocolTypes<D, OPM>,
+          LTM: LogTransferMessage<D, OPM> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DLWorkMessage")
         .field("view", &self.view)
