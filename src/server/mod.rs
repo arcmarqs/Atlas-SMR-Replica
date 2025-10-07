@@ -763,10 +763,6 @@ where
             // println!("STATE TRANSFER DONE AND LOG TRANSFER DONE IN ST");
             self.finish_transfer()?;
         } else {
-            self.transfer_states = TransferPhase::RunningTransferProtocols {
-                    log_transfer: LogTransferState::Running,
-                    state_transfer: StateTransferState::Done(seq),
-                };
              self.decision_log_handle
                 .send_work(DLWorkMessage::init_log_transfer_message(
                 self.view(),
@@ -1163,7 +1159,7 @@ where
     fn run_transfer_protocols(&mut self) -> Result<()> {
         self.transfer_states = TransferPhase::RunningTransferProtocols {
             state_transfer: StateTransferState::Running,
-            log_transfer: LogTransferState::Idle,
+            log_transfer: LogTransferState::Running,
         };
 
         info!(
