@@ -387,6 +387,7 @@ impl<V, D, OP, DL, LT, STM, NT, PL> DecisionLogManager<V, D, OP, DL, LT, STM, NT
             }
             LogTransferWorkMessage::TransferDone(start, end) => {
                 info!("Received transfer done order from replica with seq {:?}, ending at {:?}", start, end);
+                println!("Received transfer done order from replica with seq {:?}, ending at {:?}", start, end);
 
                 if let Some(decisions) = self.pending_decisions_to_execute.take() {
                     decisions.into_iter().for_each(|decision| {
@@ -394,12 +395,10 @@ impl<V, D, OP, DL, LT, STM, NT, PL> DecisionLogManager<V, D, OP, DL, LT, STM, NT
                             Either::Left(_) => {}
                             Either::Right(_) => {
                                 let (seq, client_rqs, decision) = decision.into_inner();
-                                println!("queing pre processor reqs {:?}", client_rqs.len());
                                 let _ = self.rq_pre_processor.send_return(PreProcessorMessage::DecidedBatch(client_rqs));
 
                                 match decision {
                                     LoggedDecisionValue::Execute(batch) => {
-                                        println!("queueing batch with size {:?}", batch.len());
                                         let _ = self.executor_handle.queue_update(batch);
                                     }
                                     LoggedDecisionValue::ExecutionNotNeeded => {
