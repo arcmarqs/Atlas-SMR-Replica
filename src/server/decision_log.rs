@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::sync::Arc;
+use atlas_reconfiguration::quorum_reconfig::node_types::client;
 use either::Either;
 use log::{debug, error, info, warn};
 use atlas_common::channel;
@@ -395,11 +396,15 @@ impl<V, D, OP, DL, LT, STM, NT, PL> DecisionLogManager<V, D, OP, DL, LT, STM, NT
                             Either::Left(_) => {}
                             Either::Right(_) => {
                                 let (seq, client_rqs, decision) = decision.into_inner();
-                                let _ = self.rq_pre_processor.send_return(PreProcessorMessage::DecidedBatch(client_rqs));
+                                if client_rqs.len() > 0 {
+                                    let _ = self.rq_pre_processor.send_return(PreProcessorMessage::DecidedBatch(client_rqs));
+                                }
 
                                 match decision {
                                     LoggedDecisionValue::Execute(batch) => {
-                                        let _ = self.executor_handle.queue_update(batch);
+                                        if batch.len() > 0 {
+                                            let _ = self.executor_handle.queue_update(batch);
+                                        }
                                     }
                                     LoggedDecisionValue::ExecutionNotNeeded => {
                                         unreachable!("When installing a log transfer, we require the update batch to deliver")
