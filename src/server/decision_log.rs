@@ -387,7 +387,7 @@ impl<V, D, OP, DL, LT, STM, NT, PL> DecisionLogManager<V, D, OP, DL, LT, STM, NT
             }
             LogTransferWorkMessage::TransferDone(start, end) => {
                 info!("Received transfer done order from replica with seq {:?}, ending at {:?}", start, end);
-                println!("Received transfer done order from replica with seq {:?}, ending at {:?}", start, end);
+                println!("Received transfer done order from replica with seq {:?}, ending at {:?} with {:?} pending decisions", start, end, self.pending_decisions_to_execute.as_ref().map(|d| d.len()));
 
                 if let Some(decisions) = self.pending_decisions_to_execute.take() {
                     decisions.into_iter().for_each(|decision| {
