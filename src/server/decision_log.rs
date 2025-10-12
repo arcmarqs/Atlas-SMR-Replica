@@ -27,7 +27,7 @@ use atlas_smr_application::serialize::ApplicationData;
 use crate::server::CHECKPOINT_PERIOD;
 use crate::server::state_transfer::{StateTransferThreadHandle, StateTransferWorkMessage};
 
-const CHANNEL_SIZE: usize = 1024;
+const CHANNEL_SIZE: usize = 8192;
 
 /// The handle to the decision log thread
 ///
